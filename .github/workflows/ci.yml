@@ -21,7 +21,7 @@ env:
 jobs:
   core:
     runs-on: ubuntu-26.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -48,6 +48,12 @@ jobs:
 
       - name: Install Fcitx5 build and test dependencies
         run: |
+          cat /etc/resolv.conf
+          if ! getent hosts archive.ubuntu.com >/dev/null 2>&1; then
+            echo "DNS 解析失败，临时改用公共 DNS"
+            printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' | sudo tee /etc/resolv.conf
+            getent hosts archive.ubuntu.com
+          fi
           mkdir -p ~/apt-archives/partial
           sudo apt-get update
           sudo apt-get install -y -o Dir::Cache::Archives="$HOME/apt-archives" cmake g++ libfcitx5core-dev libfcitx5config-dev libfcitx5utils-dev nlohmann-json3-dev fcitx5
@@ -232,7 +238,7 @@ jobs:
     # 发版构建在另一个版本上，差异只在发版时才暴露——系统库版本、Xcode 命令行工具版本
     # 都会让「CI 全绿、发版挂」成为可能，而那是最难查的一类。
     runs-on: macos-26
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
