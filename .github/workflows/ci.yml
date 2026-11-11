@@ -261,7 +261,9 @@ jobs:
   # 容器里的 22.04 是实打实的那个用户态，与 runner 上装的是什么无关。
   linux-22_04:
     runs-on: ubuntu-26.04
-    container: ubuntu:22.04
+    container:
+      image: ubuntu:22.04
+      options: --dns 1.1.1.1 --dns 8.8.8.8
     timeout-minutes: 25
     steps:
       # 容器里是裸系统：checkout 要 git、rustup 要 curl 与证书。
@@ -278,6 +280,13 @@ jobs:
       # install.sh 自己漏了字体依赖是另一个问题（生产代码同样会硬失败），不在这改。
       - name: Install base tooling
         run: |
+          cat /etc/resolv.conf
+          if ! getent hosts archive.ubuntu.com >/dev/null 2>&1; then
+            echo "容器内 DNS 不可用，改写 /etc/resolv.conf 后重试"
+            printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
+            cat /etc/resolv.conf
+            getent hosts archive.ubuntu.com
+          fi
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             git curl ca-certificates build-essential pkg-config python3 \
